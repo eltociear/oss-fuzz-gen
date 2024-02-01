@@ -11,8 +11,7 @@ class ContextRetriever:
   def __init__(self, project_name: str, function_name: str):
     self._project_name = project_name
     self._function_name = function_name
-    #self._current_date = datetime.date.today().strftime('%Y-%m-%d').replace('-','')
-    self._current_date = '20240131'
+    self._current_date = (datetime.date.today() - datetime.timedelta(days=1)).strftime('%Y-%m-%d').replace('-','')
 
     introspector_base_url = f'https://storage.googleapis.com/oss-fuzz-introspector/{self._project_name}/inspector-report/{self._current_date}/'
 
@@ -24,7 +23,8 @@ class ContextRetriever:
     self._all_types = defaultdict(list)
 
   def _extract_tags_and_raw_type_from_arg_info(self, arg: str):
-    # Types are sometimes of the form <tag>.<typename>
+    """Types retrieved from summary.json follow format <tag>.<typename>.
+    This function extracts both the <tag> -- which can be struct, union etc and the typename."""
     raw_arg_type = arg
     tag = ''
     tokens = arg.split('.')
@@ -36,25 +36,25 @@ class ContextRetriever:
     return tag, raw_arg_type
 
   def _refine_function_list_from_summary(self):
+    """Generates a lookup table for function information."""
     all_functions = self._summary_report['MergedProjectProfile'][
         'all-functions']
 
-    # Functions are all grouped into the same name, and multiple nodes can exist per function name (I think)
-    # This is to support name-mangling in C++ where functions can be overloaded and have the same de-mangled name
     for function in all_functions:
+      # Post-process the output, extract tag and typename from the function arguments/return type which have a typical pattern of <tag>.<typename>
       arg_tags = []
       raw_arg_types = []
-
       for arg in function['Args']:
         arg_tag, raw_arg_type = self._extract_tags_and_raw_type_from_arg_info(
             arg)
         arg_tags.append(arg_tag)
         raw_arg_types.append(raw_arg_type)
-
       return_type = function.get('return_type', '')
       return_tag, raw_return_type = self._extract_tags_and_raw_type_from_arg_info(
           return_type)
 
+    # Functions are all grouped into the same name, and multiple nodes can exist per function name (I think)
+    # This is to support name-mangling in C++ where functions can be overloaded and have the same de-mangled name
       self._all_functions_summary[function['Func name']].append({
           'filename': function['Functions filename'],
           'args': function['Args'],
