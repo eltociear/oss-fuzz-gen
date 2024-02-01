@@ -162,10 +162,12 @@ class ContextRetriever:
 
       typeinfo = typeinfo[0]
 
+      '''
       path = os.path.abspath(typeinfo['source']['source_file'])
       raw_source = requests.get(self._introspector_source_base + path,
                                 timeout=5).text
       source_lines = raw_source.split('\n')
+      '''
 
 
 def main():
