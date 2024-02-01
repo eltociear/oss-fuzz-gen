@@ -161,7 +161,6 @@ class ContextRetriever:
         continue
 
       typeinfo = typeinfo[0]
-
       '''
       path = os.path.abspath(typeinfo['source']['source_file'])
       raw_source = requests.get(self._introspector_source_base + path,
